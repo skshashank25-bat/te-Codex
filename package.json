@@ -1,0 +1,15 @@
+{
+  "name": "thousandeyes-agenticops-tools",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Node.js scripts for ThousandEyes AgenticOps test setup and cleanup.",
+  "type": "module",
+  "scripts": {
+    "check": "node --check create-thousandeyes-blog-test.mjs && node --check delete-thousandeyes-agent-safely.mjs && node --check thousandeyes-blog-transaction.js",
+    "create:blog-test": "node create-thousandeyes-blog-test.mjs",
+    "delete:agent": "node delete-thousandeyes-agent-safely.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

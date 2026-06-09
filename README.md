@@ -1,0 +1,71 @@
+# ThousandEyes AgenticOps Tools
+
+Small Node.js scripts for working with ThousandEyes browser transaction tests and agent cleanup.
+
+## Contents
+
+- `create-thousandeyes-blog-test.mjs`: creates a ThousandEyes web transaction test for the ThousandEyes blog article.
+- `thousandeyes-blog-transaction.js`: browser transaction script uploaded into the ThousandEyes test.
+- `delete-thousandeyes-agent-safely.mjs`: deletes a named agent only after an explicit confirmation environment variable is set, and writes local snapshots before and after the delete.
+
+## Requirements
+
+- Node.js 20 or newer.
+- A ThousandEyes bearer token with the required API permissions.
+- A ThousandEyes account group ID if your token has access to more than one account group.
+
+## Setup
+
+Copy the example environment file and fill in your local values:
+
+```bash
+cp .env.example .env
+```
+
+Required values:
+
+```bash
+THOUSANDEYES_TOKEN=your-token
+THOUSANDEYES_AID=your-account-group-id
+```
+
+Never commit `.env` or bearer tokens to GitHub.
+
+## Commands
+
+Check syntax:
+
+```bash
+npm run check
+```
+
+Create the blog transaction test:
+
+```bash
+npm run create:blog-test
+```
+
+Delete an agent safely:
+
+```bash
+AGENT_NAME=thousandeyes-va-907056 CONFIRM_DELETE_AGENT=thousandeyes-va-907056 npm run delete:agent
+```
+
+The delete script writes snapshot files under `thousandeyes-delete-agent-snapshots/`. Those files are ignored by Git because they can contain account-specific data.
+
+## GitHub Setup
+
+This folder is intended to be its own Git repository. After reviewing the files:
+
+```bash
+git add .
+git commit -m "Initial project setup"
+git remote add origin https://github.com/YOUR-USERNAME/YOUR-REPO.git
+git push -u origin main
+```
+
+If you use GitHub Desktop or VS Code/Copilot, open this folder directly:
+
+```bash
+/Users/ssudarsi/Documents/Codex
+```
