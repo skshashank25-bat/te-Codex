@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "check": "node --check create-thousandeyes-blog-test.mjs && node --check delete-thousandeyes-agent-safely.mjs && node --check thousandeyes-blog-transaction.js",
-    "create:blog-test": "node create-thousandeyes-blog-test.mjs",
-    "delete:agent": "node delete-thousandeyes-agent-safely.mjs"
+    "create:blog-test": "node --env-file=.env create-thousandeyes-blog-test.mjs",
+    "delete:agent": "node --env-file=.env delete-thousandeyes-agent-safely.mjs"
   },
   "engines": {
     "node": ">=20"

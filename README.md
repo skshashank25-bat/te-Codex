@@ -48,8 +48,10 @@ npm run create:blog-test
 Delete an agent safely:
 
 ```bash
-AGENT_NAME=thousandeyes-va-907056 CONFIRM_DELETE_AGENT=thousandeyes-va-907056 npm run delete:agent
+npm run delete:agent
 ```
+
+For delete runs, set `AGENT_NAME` and `CONFIRM_DELETE_AGENT` in `.env` to the same exact agent name. The npm scripts load `.env` automatically with Node's `--env-file` flag.
 
 The delete script writes snapshot files under `thousandeyes-delete-agent-snapshots/`. Those files are ignored by Git because they can contain account-specific data.
 
