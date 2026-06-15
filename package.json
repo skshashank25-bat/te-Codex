@@ -5,9 +5,13 @@
   "description": "Node.js scripts for ThousandEyes AgenticOps test setup and cleanup.",
   "type": "module",
   "scripts": {
-    "check": "node --check create-thousandeyes-blog-test.mjs && node --check delete-thousandeyes-agent-safely.mjs && node --check thousandeyes-blog-transaction.js",
+    "check": "node --check create-thousandeyes-blog-test.mjs && node --check delete-thousandeyes-agent-safely.mjs && node --check thousandeyes-blog-transaction.js && node --check projects/01-network-automation-node/src/list-cloud-agents.mjs && node --check projects/01-network-automation-node/src/build-agent-to-server-payload.mjs",
+    "agents:list": "node --env-file=.env projects/01-network-automation-node/src/list-cloud-agents.mjs",
+    "payload:agent-to-server": "node --env-file=.env projects/01-network-automation-node/src/build-agent-to-server-payload.mjs",
     "create:blog-test": "node --env-file=.env create-thousandeyes-blog-test.mjs",
-    "delete:agent": "node --env-file=.env delete-thousandeyes-agent-safely.mjs"
+    "delete:agent": "node --env-file=.env delete-thousandeyes-agent-safely.mjs",
+    "terraform:fmt": "terraform -chdir=projects/02-terraform-provider fmt -recursive",
+    "terraform:fmt:check": "terraform -chdir=projects/02-terraform-provider fmt -recursive -check"
   },
   "engines": {
     "node": ">=20"

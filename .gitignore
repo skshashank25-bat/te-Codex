@@ -12,3 +12,8 @@ dist/
 build/
 *.log
 thousandeyes-delete-agent-snapshots/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example

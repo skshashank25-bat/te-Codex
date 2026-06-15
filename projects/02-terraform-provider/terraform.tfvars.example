@@ -1,0 +1,15 @@
+te_token = "replace-with-token"
+te_aid   = "replace-with-account-group-id"
+
+agent_name = "Melbourne, Australia"
+interval   = 300
+
+enable_agent_to_server = false
+enable_http_server     = false
+enable_dns_server      = false
+
+target_server = "www.thousandeyes.com"
+target_port   = 443
+http_url      = "https://www.thousandeyes.com"
+dns_domain    = "www.thousandeyes.com ANY"
+dns_servers   = ["ns1.google.com"]

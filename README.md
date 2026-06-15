@@ -7,6 +7,9 @@ Small Node.js scripts for working with ThousandEyes browser transaction tests an
 - `create-thousandeyes-blog-test.mjs`: creates a ThousandEyes web transaction test for the ThousandEyes blog article.
 - `thousandeyes-blog-transaction.js`: browser transaction script uploaded into the ThousandEyes test.
 - `delete-thousandeyes-agent-safely.mjs`: deletes a named agent only after an explicit confirmation environment variable is set, and writes local snapshots before and after the delete.
+- `projects/01-network-automation-node/`: small Node.js network automation examples.
+- `projects/02-terraform-provider/`: ThousandEyes Terraform provider starter project.
+- `projects/03-mcp-assisted-workflows/`: MCP-assisted ThousandEyes workflow notes.
 
 ## Requirements
 
@@ -25,8 +28,8 @@ cp .env.example .env
 Required values:
 
 ```bash
-THOUSANDEYES_TOKEN=your-token
-THOUSANDEYES_AID=your-account-group-id
+TE_TOKEN=your-token
+TE_AID=your-account-group-id
 ```
 
 Never commit `.env` or bearer tokens to GitHub.
@@ -37,6 +40,18 @@ Check syntax:
 
 ```bash
 npm run check
+```
+
+List cloud agents from the API:
+
+```bash
+npm run agents:list
+```
+
+Generate an agent-to-server payload without creating a test:
+
+```bash
+npm run payload:agent-to-server
 ```
 
 Create the blog transaction test:

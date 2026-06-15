@@ -5,6 +5,7 @@ const API_BASE_URL =
   process.env.THOU_SANDEYES_API_BASE_URL ||
   'https://api.thousandeyes.com/v7';
 const BEARER_TOKEN =
+  process.env.TE_TOKEN ||
   process.env.THOU_SANDEYES_TOKEN ||
   process.env.THOUSANDEYES_TOKEN ||
   process.env.TE_BEARER_TOKEN ||
