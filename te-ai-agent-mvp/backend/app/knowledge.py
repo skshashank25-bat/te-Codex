@@ -26,7 +26,36 @@ OFFICIAL_SOURCES = [
         authority="official",
     ),
 ]
+API_ENDPOINTS = {
+    "web tests": {
+        "method": "GET",
+        "endpoint": "/tests/web",
+        "description": "Retrieve web tests.",
+    },
+    "alerts": {
+        "method": "GET",
+        "endpoint": "/alerts",
+        "description": "Retrieve alerts or alert-related resources.",
+    },
+    "endpoint agents": {
+        "method": "GET",
+        "endpoint": "/endpoint-agents",
+        "description": "Retrieve Endpoint Agents.",
+    },
+    "account groups": {
+        "method": "GET",
+        "endpoint": "/account-groups",
+        "description": "Retrieve account groups.",
+    },
+}
 
+
+def find_endpoint(query: str):
+    q = query.lower()
+    for key, value in API_ENDPOINTS.items():
+        if key in q:
+            return value
+    return None
 
 class StubRetriever:
     """Replace with vector search over docs, OpenAPI specs, TAC KBs, and MCP results."""
