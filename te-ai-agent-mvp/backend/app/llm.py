@@ -1,5 +1,6 @@
 from .models import Workflow, Source
 from .knowledge import find_endpoint
+from .openapi_loader import search_operations
 
 ERROR_MAP = {
     400: "Malformed request, invalid JSON, missing required field, invalid query parameter, or body schema mismatch.",
@@ -30,8 +31,9 @@ class MockLLMProvider:
 
     def _api_endpoint_answer(self, user_input: str, sources: list[Source]) -> str:
         endpoint = find_endpoint(user_input)
+        operations = search_operations(user_input)
 
-        if not endpoint:
+        if not endpoint and not operations:
             return f"""## Recommended API v7 Endpoint
 
 I could not confidently match this ask to a known endpoint yet.
@@ -42,15 +44,47 @@ Please include the resource type, such as web tests, alerts, endpoint agents, or
 {self._source_lines(sources)}
 """
 
-        method = endpoint["method"]
-        path = endpoint["endpoint"]
-        description = endpoint["description"]
+        if operations:
+            operation = operations[0]
+            method = operation["method"]
+            path = operation["path"]
+            description = operation["description"] or operation["summary"]
+
+            parameter_lines = []
+            for param in operation.get("parameters", []):
+                required_text = "required" if param.get("required") else "optional"
+                parameter_lines.append(
+                    f"- `{param.get('name')}`: {param.get('in')} parameter, {required_text}, type `{param.get('schema_type')}`. {param.get('description')}"
+                )
+
+            if not parameter_lines:
+                parameter_lines.append("- No parameters listed in OpenAPI sample.")
+
+            response_lines = []
+            for response in operation.get("responses", []):
+                response_lines.append(
+                    f"- `{response.get('status_code')}`: {response.get('description')}"
+                )
+
+            if not response_lines:
+                response_lines.append("- No responses listed in OpenAPI sample.")
+
+        else:
+            method = endpoint["method"]
+            path = endpoint["endpoint"]
+            description = endpoint["description"]
+            parameter_lines = ["- OpenAPI details not available yet for this endpoint."]
+            response_lines = ["- OpenAPI response details not available yet for this endpoint."]
 
         return f"""## Recommended API v7 Endpoint
 
 - Method: `{method}`
 - Endpoint: `{path}`
 - Use case: {description}
+
+## Parameters
+
+{chr(10).join(parameter_lines)}
 
 ## Sample Request
 
@@ -59,6 +93,10 @@ curl --request {method} "https://api.thousandeyes.com/v7{path}" \\
   --header "Authorization: Bearer <TOKEN>" \\
   --header "Accept: application/json"
 ```
+
+## Responses
+
+{chr(10).join(response_lines)}
 
 ## Sample JSON Response
 

@@ -1,3 +1,5 @@
+import json
+from pathlib import Path
 from .models import Source
 
 OFFICIAL_SOURCES = [
@@ -26,35 +28,22 @@ OFFICIAL_SOURCES = [
         authority="official",
     ),
 ]
-API_ENDPOINTS = {
-    "web tests": {
-        "method": "GET",
-        "endpoint": "/tests/web",
-        "description": "Retrieve web tests.",
-    },
-    "alerts": {
-        "method": "GET",
-        "endpoint": "/alerts",
-        "description": "Retrieve alerts or alert-related resources.",
-    },
-    "endpoint agents": {
-        "method": "GET",
-        "endpoint": "/endpoint-agents",
-        "description": "Retrieve Endpoint Agents.",
-    },
-    "account groups": {
-        "method": "GET",
-        "endpoint": "/account-groups",
-        "description": "Retrieve account groups.",
-    },
-}
+
+
+def load_endpoint_catalog() -> dict:
+    catalog_path = Path(__file__).resolve().parent.parent / "data" / "endpoints.json"
+    with catalog_path.open("r", encoding="utf-8") as f:
+        return json.load(f)
 
 
 def find_endpoint(query: str):
     q = query.lower()
-    for key, value in API_ENDPOINTS.items():
+    endpoints = load_endpoint_catalog()
+
+    for key, value in endpoints.items():
         if key in q:
             return value
+
     return None
 
 class StubRetriever:

@@ -36,3 +36,13 @@ __pycache__/
 # IDEs
 .vscode/
 .idea/
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Node
+node_modules/

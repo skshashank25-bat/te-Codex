@@ -4,7 +4,18 @@ from .models import Workflow
 def route_workflow(text: str) -> Workflow:
     t = text.lower()
 
-    if any(x in t for x in ["selenium", "thousandeyes';", "from 'thousandeyes'", "transaction", "driver.", "webdriver", "by.css", "by.xpath"]):
+    if any(x in t for x in [
+    "selenium",
+    "webdriver",
+    "driver.",
+    "by.css",
+    "by.xpath",
+    "await ",
+    "async function",
+    "import { driver",
+    "import { test",
+    "runscript()"
+]):
         return Workflow.transaction_script
 
     if any(x in t for x in ["import requests", "requests.", "python", "traceback", "raise_for_status", "urllib", "httpx"]):

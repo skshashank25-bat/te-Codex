@@ -1,0 +1,96 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Sample ThousandEyes API v7",
+    "version": "sample"
+  },
+  "paths": {
+    "/tests/web": {
+      "get": {
+        "summary": "Retrieve web tests",
+        "description": "Returns a list of ThousandEyes web tests.",
+        "parameters": [
+          {
+            "name": "aid",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Account group ID."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/tests/transaction": {
+      "get": {
+        "summary": "Retrieve transaction tests",
+        "description": "Returns a list of ThousandEyes Transaction tests.",
+        "parameters": [
+          {
+            "name": "aid",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Account group ID."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/endpoint-agents": {
+      "get": {
+        "summary": "Retrieve Endpoint Agents",
+        "description": "Returns a list of Endpoint Agents.",
+        "parameters": [
+          {
+            "name": "aid",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Account group ID."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "web tests": {
+    "method": "GET",
+    "endpoint": "/tests/web",
+    "description": "Retrieve web tests."
+  },
+  "transaction tests": {
+    "method": "GET",
+    "endpoint": "/tests/transaction",
+    "description": "Retrieve Transaction tests."
+  },
+  "api tests": {
+    "method": "GET",
+    "endpoint": "/tests/api",
+    "description": "Retrieve API tests."
+  },
+  "page load tests": {
+    "method": "GET",
+    "endpoint": "/tests/page-load",
+    "description": "Retrieve Page Load tests."
+  },
+  "http server tests": {
+    "method": "GET",
+    "endpoint": "/tests/http-server",
+    "description": "Retrieve HTTP Server tests."
+  },
+  "network tests": {
+    "method": "GET",
+    "endpoint": "/tests/network",
+    "description": "Retrieve network tests."
+  },
+  "enterprise agents": {
+    "method": "GET",
+    "endpoint": "/agents",
+    "description": "Retrieve Enterprise Agents."
+  },
+  "endpoint agents": {
+    "method": "GET",
+    "endpoint": "/endpoint-agents",
+    "description": "Retrieve Endpoint Agents."
+  },
+  "alerts": {
+    "method": "GET",
+    "endpoint": "/alerts",
+    "description": "Retrieve alerts."
+  },
+  "alert rules": {
+    "method": "GET",
+    "endpoint": "/alert-rules",
+    "description": "Retrieve alert rules."
+  },
+  "account groups": {
+    "method": "GET",
+    "endpoint": "/account-groups",
+    "description": "Retrieve account groups."
+  },
+  "users": {
+    "method": "GET",
+    "endpoint": "/users",
+    "description": "Retrieve users."
+  },
+  "roles": {
+    "method": "GET",
+    "endpoint": "/roles",
+    "description": "Retrieve roles."
+  },
+  "dashboards": {
+    "method": "GET",
+    "endpoint": "/dashboards",
+    "description": "Retrieve dashboards."
+  },
+  "snapshots": {
+    "method": "GET",
+    "endpoint": "/snapshots",
+    "description": "Retrieve snapshots."
+  }
+}
