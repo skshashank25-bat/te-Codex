@@ -1,6 +1,7 @@
 from .models import Workflow, Source
 from .knowledge import find_endpoint
 from .openapi_loader import search_operations
+from .docs_loader import search_docs
 
 ERROR_MAP = {
     400: "Malformed request, invalid JSON, missing required field, invalid query parameter, or body schema mismatch.",
@@ -23,7 +24,7 @@ class MockLLMProvider:
         if workflow == Workflow.python_script:
             return self._python_answer(sources)
         if workflow == Workflow.transaction_script:
-            return self._transaction_answer(sources)
+            return self._transaction_answer(user_input, sources)
         return self._general_answer(sources)
 
     def _source_lines(self, sources: list[Source]) -> str:
@@ -32,6 +33,7 @@ class MockLLMProvider:
     def _api_endpoint_answer(self, user_input: str, sources: list[Source]) -> str:
         endpoint = find_endpoint(user_input)
         operations = search_operations(user_input)
+        docs = search_docs(user_input)
 
         if not endpoint and not operations:
             return f"""## Recommended API v7 Endpoint
@@ -76,6 +78,13 @@ Please include the resource type, such as web tests, alerts, endpoint agents, or
             parameter_lines = ["- OpenAPI details not available yet for this endpoint."]
             response_lines = ["- OpenAPI response details not available yet for this endpoint."]
 
+        doc_lines = []
+        for doc in docs:
+            doc_lines.append(f"### {doc['title']}\n\n{doc['snippet']}")
+
+        if not doc_lines:
+            doc_lines.append("No related local documentation found yet.")
+
         return f"""## Recommended API v7 Endpoint
 
 - Method: `{method}`
@@ -93,6 +102,9 @@ curl --request {method} "https://api.thousandeyes.com/v7{path}" \\
   --header "Authorization: Bearer <TOKEN>" \\
   --header "Accept: application/json"
 ```
+## Related Documentation
+
+{chr(10).join(doc_lines)}
 
 ## Responses
 
@@ -119,6 +131,8 @@ curl --request {method} "https://api.thousandeyes.com/v7{path}" \\
 
     def _api_error_answer(self, user_input: str, sources: list[Source]) -> str:
         matched = []
+        docs = search_docs(user_input)
+
         for code, cause in ERROR_MAP.items():
             if str(code) in user_input:
                 matched.append((code, cause))
@@ -127,6 +141,13 @@ curl --request {method} "https://api.thousandeyes.com/v7{path}" \\
             matched = [("unknown", "No explicit status code detected.")]
 
         lines = "\n".join([f"- `{code}`: {cause}" for code, cause in matched])
+
+        doc_lines = []
+        for doc in docs:
+            doc_lines.append(f"### {doc['title']}\n\n{doc['snippet']}")
+
+        if not doc_lines:
+            doc_lines.append("No related local documentation found yet.")
 
         return f"""## Troubleshooting Notes
 
@@ -141,6 +162,10 @@ Likely causes:
 - Confirm `Authorization: Bearer <TOKEN>` is present and valid.
 - Confirm role, scope, account group, and `aid` context.
 - Capture sanitized request body, response body, timestamp, and request ID if present.
+
+## Related Documentation
+
+{chr(10).join(doc_lines)}
 
 ## Sources
 {self._source_lines(sources)}
@@ -161,18 +186,34 @@ Checklist:
 {self._source_lines(sources)}
 """
 
-    def _transaction_answer(self, sources: list[Source]) -> str:
+    def _transaction_answer(self, user_input: str, sources: list[Source]) -> str:
+        docs = search_docs(user_input)
+
+        doc_lines = []
+
+        for doc in docs:
+            doc_lines.append(
+                f"### {doc['title']}\n\n{doc['snippet']}"
+            )
+
+        if not doc_lines:
+            doc_lines.append("No transaction documentation found.")
+
         return f"""## Transaction Script Review
 
 Checklist:
 
-- Use `async` / `await` consistently.
-- Import from `selenium-webdriver` and `thousandeyes`.
+- Use async / await consistently.
+- Import from selenium-webdriver and thousandeyes.
 - Wait for elements before clicking or typing.
 - Prefer stable CSS selectors.
 - Avoid fixed sleeps when possible.
 - Use markers around important journey steps.
 - Do not hardcode credentials.
+
+## Related Documentation
+
+{chr(10).join(doc_lines)}
 
 ## Sources
 {self._source_lines(sources)}
