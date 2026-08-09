@@ -46,3 +46,8 @@ __pycache__/
 
 # Node
 node_modules/
+
+te-ai-agent-mvp/backend/data/chroma/
+
+# Local backups and temp files
+te-ai-agent-mvp/backend/requirements.txt.backup
