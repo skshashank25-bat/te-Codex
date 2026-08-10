@@ -1,17 +1,85 @@
+import re
 from .models import Workflow, Source
 from .knowledge import find_endpoint
 from .openapi_loader import search_operations
 from .docs_loader import search_docs
+from .semantic_search import search_semantic_docs
+
+ERROR_INTENT_PATTERNS = {
+    400: [
+        r"\bbad request\b",
+        r"\bmalformed request\b",
+        r"\binvalid json\b",
+        r"\bmissing required field\b",
+        r"\binvalid parameter\b",
+        r"\bschema mismatch\b",
+    ],
+    401: [
+        r"\bunauthorized\b",
+        r"\bbearer token\b",
+        r"\btoken rejected\b",
+        r"\btoken expired\b",
+        r"\bexpired token\b",
+        r"\binvalid token\b",
+        r"\brevoked token\b",
+        r"\bauthentication failed\b",
+        r"\bauthentication error\b",
+        r"\bnot authenticated\b",
+    ],
+    403: [
+        r"\bforbidden\b",
+        r"\bpermission denied\b",
+        r"\baccess denied\b",
+        r"\binsufficient permission\b",
+        r"\binsufficient permissions\b",
+        r"\binsufficient role\b",
+        r"\binsufficient scope\b",
+        r"\bnot authorized\b",
+    ],
+    404: [
+        r"\bnot found\b",
+        r"\bresource missing\b",
+        r"\bresource does not exist\b",
+        r"\bendpoint does not exist\b",
+        r"\bwrong endpoint\b",
+    ],
+    405: [
+        r"\bmethod not allowed\b",
+        r"\bwrong http method\b",
+        r"\bwrong method\b",
+    ],
+    429: [
+        r"\btoo many requests\b",
+        r"\brate limit\b",
+        r"\brate limited\b",
+        r"\brate limiting\b",
+        r"\bthrottled\b",
+        r"\bthrottling\b",
+        r"\bretry-after\b",
+    ],
+    500: [
+        r"\binternal server error\b",
+        r"\bserver error\b",
+        r"\bplatform error\b",
+        r"\bbackend error\b",
+    ],
+    503: [
+        r"\bservice unavailable\b",
+        r"\btemporarily unavailable\b",
+        r"\btemporary service outage\b",
+        r"\bmaintenance\b",
+    ],
+}
 
 ERROR_MAP = {
-    400: "Malformed request, invalid JSON, missing required field, invalid query parameter, or body schema mismatch.",
-    401: "Missing, expired, invalid, or revoked bearer token.",
-    403: "Authenticated but insufficient role, scope, account group, or resource permission.",
-    404: "Wrong endpoint path, wrong object ID, resource not visible, or API version mismatch.",
-    405: "Wrong HTTP method for the endpoint.",
-    429: "Rate limit exceeded. Honor Retry-After and add backoff.",
-    500: "Possible platform-side error. Collect timestamp, endpoint, method, payload, response body, and request ID.",
-    503: "Temporary service unavailability or maintenance.",
+    400: "Bad Request",
+    401: "Unauthorized",
+    403: "Forbidden",
+    404: "Not Found",
+    405: "Method Not Allowed",
+    429: "Too Many Requests",
+    500: "Internal Server Error",
+    503: "Service Unavailable",
 }
 
 
@@ -22,18 +90,165 @@ class MockLLMProvider:
         if workflow == Workflow.api_error:
             return self._api_error_answer(user_input, sources)
         if workflow == Workflow.python_script:
-            return self._python_answer(sources)
+            return self._python_answer(user_input, sources)
         if workflow == Workflow.transaction_script:
             return self._transaction_answer(user_input, sources)
         return self._general_answer(sources)
 
     def _source_lines(self, sources: list[Source]) -> str:
         return "\n".join([f"- {s.title}: {s.url}" for s in sources])
+    def _detect_error_codes(self, user_input: str) -> list[int]:
+        """
+        Detect API error codes from explicit status codes or
+        natural-language error symptoms.
+        """
+
+        matched_codes: list[int] = []
+
+        # Explicit status codes have the strongest signal.
+        for code in ERROR_MAP:
+            if re.search(rf"\b{code}\b", user_input):
+                matched_codes.append(code)
+
+        # Also detect natural-language descriptions.
+        for code, patterns in ERROR_INTENT_PATTERNS.items():
+            for pattern in patterns:
+                if re.search(
+                    pattern,
+                    user_input,
+                    re.IGNORECASE,
+                ):
+                    if code not in matched_codes:
+                        matched_codes.append(code)
+
+                    break
+
+        return matched_codes
+    
+
+    def _related_docs(self, user_input: str, limit: int = 3) -> list[dict]:
+        """
+        Retrieve related documentation.
+
+        Semantic retrieval is preferred.
+        Keyword retrieval is used as a fallback if semantic search
+        is unavailable or returns no useful results.
+        """
+
+        try:
+            semantic_results = search_semantic_docs(
+                user_input,
+                limit=limit,
+            )
+
+            if semantic_results:
+                normalized_results = []
+
+                for result in semantic_results:
+                    metadata = result.get("metadata", {})
+
+                    normalized_results.append(
+                        {
+                            "title": metadata.get(
+                                "document_title",
+                                "Documentation",
+                            ),
+                            "filename": metadata.get(
+                                "source",
+                                "unknown",
+                            ),
+                            "heading": metadata.get(
+                                "heading",
+                                "Related Information",
+                            ),
+                            "snippet": result.get(
+                                "content",
+                                "",
+                            ),
+                            "similarity": result.get(
+                                "similarity",
+                            ),
+                            "retrieval_type": "semantic",
+                        }
+                    )
+
+                return normalized_results
+
+        except Exception:
+            # Semantic retrieval is an enhancement.
+            # If Ollama or ChromaDB is unavailable, keep the
+            # application functional using keyword retrieval.
+            pass
+
+        keyword_results = search_docs(
+            user_input,
+            limit=limit,
+        )
+
+        normalized_results = []
+
+        for result in keyword_results:
+            normalized_results.append(
+                {
+                    "title": result.get(
+                        "title",
+                        "Documentation",
+                    ),
+                    "filename": result.get(
+                        "filename",
+                        "unknown",
+                    ),
+                    "heading": None,
+                    "snippet": result.get(
+                        "snippet",
+                        "",
+                    ),
+                    "similarity": None,
+                    "retrieval_type": "keyword",
+                }
+            )
+
+        return normalized_results
+
+    def _format_related_docs(
+        self,
+        docs: list[dict],
+    ) -> str:
+        """
+        Format semantic or keyword retrieval results into the
+        existing Related Documentation Markdown section.
+        """
+
+        if not docs:
+            return "No related local documentation found yet."
+
+        sections = []
+
+        for doc in docs:
+            title = doc.get("title", "Documentation")
+            heading = doc.get("heading")
+            filename = doc.get("filename", "unknown")
+            snippet = doc.get("snippet", "").strip()
+
+            if heading:
+                section_title = f"### {title} — {heading}"
+            else:
+                section_title = f"### {title}"
+
+            section = (
+                f"{section_title}\n\n"
+                f"{snippet}\n\n"
+                f"_Source: `{filename}`_"
+            )
+
+            sections.append(section)
+
+        return "\n\n".join(sections)
 
     def _api_endpoint_answer(self, user_input: str, sources: list[Source]) -> str:
         endpoint = find_endpoint(user_input)
         operations = search_operations(user_input)
-        docs = search_docs(user_input)
+        docs = self._related_docs(user_input)
 
         if not endpoint and not operations:
             return f"""## Recommended API v7 Endpoint
@@ -78,12 +293,7 @@ Please include the resource type, such as web tests, alerts, endpoint agents, or
             parameter_lines = ["- OpenAPI details not available yet for this endpoint."]
             response_lines = ["- OpenAPI response details not available yet for this endpoint."]
 
-        doc_lines = []
-        for doc in docs:
-            doc_lines.append(f"### {doc['title']}\n\n{doc['snippet']}")
-
-        if not doc_lines:
-            doc_lines.append("No related local documentation found yet.")
+        related_documentation = self._format_related_docs(docs)
 
         return f"""## Recommended API v7 Endpoint
 
@@ -103,8 +313,7 @@ curl --request {method} "https://api.thousandeyes.com/v7{path}" \\
   --header "Accept: application/json"
 ```
 ## Related Documentation
-
-{chr(10).join(doc_lines)}
+{related_documentation}
 
 ## Responses
 
@@ -129,25 +338,30 @@ curl --request {method} "https://api.thousandeyes.com/v7{path}" \\
 {self._source_lines(sources)}
 """
 
-    def _api_error_answer(self, user_input: str, sources: list[Source]) -> str:
-        matched = []
-        docs = search_docs(user_input)
+    def _api_error_answer(
+        self,
+        user_input: str,
+        sources: list[Source],
+    ) -> str:
+        docs = self._related_docs(user_input)
+        matched_codes = self._detect_error_codes(user_input)
 
-        for code, cause in ERROR_MAP.items():
-            if str(code) in user_input:
-                matched.append((code, cause))
-
-        if not matched:
-            matched = [("unknown", "No explicit status code detected.")]
+        if matched_codes:
+            matched = [
+                (code, ERROR_MAP[code])
+                for code in matched_codes
+            ]
+        else:
+            matched = [
+                (
+                    "unknown",
+                    "No HTTP status code or known API error pattern was detected.",
+                )
+            ]
 
         lines = "\n".join([f"- `{code}`: {cause}" for code, cause in matched])
 
-        doc_lines = []
-        for doc in docs:
-            doc_lines.append(f"### {doc['title']}\n\n{doc['snippet']}")
-
-        if not doc_lines:
-            doc_lines.append("No related local documentation found yet.")
+        related_documentation = self._format_related_docs(docs)
 
         return f"""## Troubleshooting Notes
 
@@ -165,13 +379,23 @@ Likely causes:
 
 ## Related Documentation
 
-{chr(10).join(doc_lines)}
+{related_documentation}
 
 ## Sources
 {self._source_lines(sources)}
 """
 
-    def _python_answer(self, sources: list[Source]) -> str:
+    def _python_answer(
+        self,
+        user_input: str,
+        sources: list[Source],
+    ) -> str:
+        docs = self._related_docs(user_input)
+
+        related_documentation = self._format_related_docs(
+            docs
+        )
+
         return f"""## Python Script Review
 
 Checklist:
@@ -182,24 +406,30 @@ Checklist:
 - Use `json=payload` for JSON bodies.
 - Add timeout, error handling, 429 retry logic, and pagination.
 
+## Related Documentation
+
+{related_documentation}
+
 ## Sources
 {self._source_lines(sources)}
 """
 
-    def _transaction_answer(self, user_input: str, sources: list[Source]) -> str:
-        docs = search_docs(user_input)
+    def _transaction_answer(
+        self,
+        user_input: str,
+        sources: list[Source],
+    ) -> str:
+        docs = self._related_docs(
+            user_input,
+            limit=4,
+        )
 
-        doc_lines = []
-
-        for doc in docs:
-            doc_lines.append(
-                f"### {doc['title']}\n\n{doc['snippet']}"
-            )
-
-        if not doc_lines:
-            doc_lines.append("No transaction documentation found.")
+        related_documentation = self._format_related_docs(
+            docs
+        )
 
         return f"""## Transaction Script Review
+
 
 Checklist:
 
@@ -213,7 +443,7 @@ Checklist:
 
 ## Related Documentation
 
-{chr(10).join(doc_lines)}
+{related_documentation}
 
 ## Sources
 {self._source_lines(sources)}
